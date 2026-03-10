@@ -6,12 +6,14 @@ import com.hotsearch.repository.HotSearchRepository;
 import com.hotsearch.service.HotSearchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -31,12 +33,25 @@ public class HotSearchServiceImpl implements HotSearchService {
     @Override
     public List<String> getAllPlatforms() {
         String cacheKey = REDIS_KEY_PREFIX + "platforms";
-        @SuppressWarnings("unchecked")
-        List<String> platforms = (List<String>) redisTemplate.opsForValue().get(cacheKey);
+        
+        try {
+            @SuppressWarnings("unchecked")
+            List<String> platforms = (List<String>) redisTemplate.opsForValue().get(cacheKey);
+            if (platforms != null && !platforms.isEmpty()) {
+                return platforms;
+            }
+        } catch (DataAccessException e) {
+            log.warn("Redis access failed, falling back to database: {}", e.getMessage());
+        }
 
-        if (platforms == null) {
-            platforms = hotSearchRepository.findAllPlatforms();
-            redisTemplate.opsForValue().set(cacheKey, platforms, REDIS_EXPIRE_HOURS, TimeUnit.HOURS);
+        List<String> platforms = hotSearchRepository.findAllPlatforms();
+        
+        try {
+            if (!platforms.isEmpty()) {
+                redisTemplate.opsForValue().set(cacheKey, platforms, REDIS_EXPIRE_HOURS, TimeUnit.HOURS);
+            }
+        } catch (DataAccessException e) {
+            log.warn("Failed to cache platforms to Redis: {}", e.getMessage());
         }
 
         return platforms;
@@ -45,11 +60,15 @@ public class HotSearchServiceImpl implements HotSearchService {
     @Override
     public List<HotSearchDTO> getHotSearchesByPlatform(String platform, int limit) {
         String cacheKey = REDIS_KEY_PREFIX + platform;
-        @SuppressWarnings("unchecked")
-        List<HotSearchDTO> cached = (List<HotSearchDTO>) redisTemplate.opsForValue().get(cacheKey);
-
-        if (cached != null) {
-            return cached;
+        
+        try {
+            @SuppressWarnings("unchecked")
+            List<HotSearchDTO> cached = (List<HotSearchDTO>) redisTemplate.opsForValue().get(cacheKey);
+            if (cached != null && !cached.isEmpty()) {
+                return cached;
+            }
+        } catch (DataAccessException e) {
+            log.warn("Redis access failed, falling back to database: {}", e.getMessage());
         }
 
         LocalDateTime twoHoursAgo = LocalDateTime.now().minusHours(2);
@@ -60,13 +79,23 @@ public class HotSearchServiceImpl implements HotSearchService {
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
 
-        redisTemplate.opsForValue().set(cacheKey, dtos, REDIS_EXPIRE_HOURS, TimeUnit.HOURS);
+        try {
+            if (!dtos.isEmpty()) {
+                redisTemplate.opsForValue().set(cacheKey, dtos, REDIS_EXPIRE_HOURS, TimeUnit.HOURS);
+            }
+        } catch (DataAccessException e) {
+            log.warn("Failed to cache hot searches to Redis: {}", e.getMessage());
+        }
+
         return dtos;
     }
 
     @Override
     public Map<String, List<HotSearchDTO>> getAllHotSearches(int limit) {
         List<String> platforms = getAllPlatforms();
+        if (platforms.isEmpty()) {
+            return Collections.emptyMap();
+        }
         return platforms.stream()
                 .collect(Collectors.toMap(
                         platform -> platform,
@@ -76,25 +105,37 @@ public class HotSearchServiceImpl implements HotSearchService {
 
     @Override
     public void refreshAllHotSearches() {
-        // 清除所有缓存
-        List<String> platforms = getAllPlatforms();
-        for (String platform : platforms) {
-            redisTemplate.delete(REDIS_KEY_PREFIX + platform);
+        try {
+            List<String> platforms = getAllPlatforms();
+            for (String platform : platforms) {
+                redisTemplate.delete(REDIS_KEY_PREFIX + platform);
+            }
+            redisTemplate.delete(REDIS_KEY_PREFIX + "platforms");
+            log.info("Cleared all hot search cache");
+        } catch (DataAccessException e) {
+            log.warn("Failed to clear cache: {}", e.getMessage());
         }
-        redisTemplate.delete(REDIS_KEY_PREFIX + "platforms");
     }
 
     @Override
     @Transactional
     public void saveHotSearches(String platform, List<HotSearchDTO> hotSearches) {
+        if (hotSearches == null || hotSearches.isEmpty()) {
+            log.debug("No hot searches to save for platform: {}", platform);
+            return;
+        }
+
         List<HotSearch> entities = hotSearches.stream()
                 .map(dto -> convertToEntity(dto, platform))
                 .collect(Collectors.toList());
 
         hotSearchRepository.saveAll(entities);
 
-        // 清除该平台缓存
-        redisTemplate.delete(REDIS_KEY_PREFIX + platform);
+        try {
+            redisTemplate.delete(REDIS_KEY_PREFIX + platform);
+        } catch (DataAccessException e) {
+            log.warn("Failed to clear platform cache: {}", e.getMessage());
+        }
 
         log.info("Saved {} hot searches for platform: {}", entities.size(), platform);
     }

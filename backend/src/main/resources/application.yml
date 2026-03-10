@@ -44,8 +44,10 @@ spring:
 
 # 爬虫配置
 scraper:
-  # 抓取间隔（分钟）
-  interval: 5
+  # 初始延迟（毫秒）- 等待应用完全启动后再开始抓取
+  initial-delay: 30000
+  # 抓取间隔（毫秒）- 5分钟
+  interval: 300000
   # 超时时间（秒）
   timeout: 30
   # 平台配置
