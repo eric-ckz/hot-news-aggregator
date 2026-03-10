@@ -24,17 +24,14 @@ spring:
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
 
-  redis:
-    host: localhost
-    port: 6379
-    password:
-    database: 0
-    timeout: 2000ms
-    lettuce:
-      pool:
-        max-active: 8
-        max-idle: 8
-        min-idle: 0
+  data:
+    # Redis 配置
+    redis:
+      database: 0
+      host: localhost
+      password: 123456
+      timeout: 5000
+      port: 6379
 
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
