@@ -51,18 +51,23 @@ scraper:
   platforms:
     weibo:
       enabled: true
+      # 微博官方API (已验证可用)
       url: https://weibo.com/ajax/side/hotSearch
     zhihu:
-      enabled: true
+      enabled: false
+      # 知乎API需要登录，暂时禁用
       url: https://www.zhihu.com/api/v3/feed/topstory/hot-lists/total
     hupu:
-      enabled: true
+      enabled: false
+      # 虎扑API需要特殊处理，暂时禁用
       url: https://bbs.hupu.com/all-gambia
     bilibili:
       enabled: true
-      url: https://api.bilibili.com/x/web-interface/ranking/v2
+      # 免费API: https://v.api.aa1.cn/api/bilibili-rs/ (已验证可用)
+      url: https://v.api.aa1.cn/api/bilibili-rs/
     baidu:
-      enabled: true
+      enabled: false
+      # 百度需要爬取页面，暂时禁用
       url: https://top.baidu.com/board?tab=realtime
 
 # 日志配置

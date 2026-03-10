@@ -11,6 +11,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Component
@@ -39,7 +40,8 @@ public class WeiboScraper implements HotSearchScraper {
 
         return webClient.get()
                 .uri(url)
-                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                .header("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148")
+                .header("Referer", "https://s.weibo.com/top/summary")
                 .retrieve()
                 .bodyToMono(JsonNode.class)
                 .map(this::parseResponse)
@@ -50,19 +52,31 @@ public class WeiboScraper implements HotSearchScraper {
     private List<HotSearchDTO> parseResponse(JsonNode jsonNode) {
         List<HotSearchDTO> result = new ArrayList<>();
 
+        // 微博官方API格式: {"data": {"realtime": [...]}}
         JsonNode realtimeNode = jsonNode.path("data").path("realtime");
         if (realtimeNode.isArray()) {
-            int rank = 1;
             for (JsonNode node : realtimeNode) {
+                String title = node.path("word").asText();
+                String wordScheme = node.path("word_scheme").asText();
+                long hotValue = node.path("num").asLong();
+                int rank = node.path("rank").asInt();
+                String labelName = node.path("label_name").asText();
+
+                // 构建完整的URL
+                String hotSearchUrl = "https://s.weibo.com/weibo?q=" + (wordScheme.isEmpty() ? title : wordScheme);
+
                 HotSearchDTO dto = HotSearchDTO.builder()
-                        .title(node.path("word").asText())
-                        .url("https://s.weibo.com/weibo?q=" + node.path("word_scheme").asText())
-                        .heatValue(node.path("raw_hot").asLong())
-                        .rankNum(rank++)
-                        .category(node.path("category").asText())
+                        .title(title)
+                        .url(hotSearchUrl)
+                        .heatValue(hotValue)
+                        .rankNum(rank)
+                        .category(labelName.isEmpty() ? "hot" : labelName)
                         .build();
                 result.add(dto);
             }
+
+            // 按排名排序
+            result.sort(Comparator.comparingInt(HotSearchDTO::getRankNum));
         }
 
         return result;
