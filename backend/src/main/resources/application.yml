@@ -54,9 +54,9 @@ scraper:
       # 微博官方API (已验证可用)
       url: https://weibo.com/ajax/side/hotSearch
     zhihu:
-      enabled: false
-      # 知乎API需要登录，暂时禁用
-      url: https://www.zhihu.com/api/v3/feed/topstory/hot-lists/total
+      enabled: true
+      # 知乎热搜API
+      url: https://api.zhihu.com/topstory/hot-list
     hupu:
       enabled: false
       # 虎扑API需要特殊处理，暂时禁用
