@@ -38,33 +38,78 @@ public class HupuScraper implements HotSearchScraper {
         }
 
         return webClient.get()
-                .uri("https://bbs.hupu.com/api/v1/hot-threads")
-                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                .uri(url)
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
+                .header("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
+                .header("Connection", "keep-alive")
                 .retrieve()
-                .bodyToMono(JsonNode.class)
-                .map(this::parseResponse)
+                .bodyToMono(String.class)
+                .map(this::parseHtmlResponse)
                 .doOnError(error -> log.error("Failed to scrape Hupu hot search: {}", error.getMessage()))
                 .onErrorResume(error -> Mono.empty());
     }
 
-    private List<HotSearchDTO> parseResponse(JsonNode jsonNode) {
+    private List<HotSearchDTO> parseHtmlResponse(String html) {
         List<HotSearchDTO> result = new ArrayList<>();
 
-        JsonNode dataNode = jsonNode.path("data").path("threads");
-        if (dataNode.isArray()) {
+        try {
+            org.jsoup.nodes.Document document = org.jsoup.Jsoup.parse(html);
+            log.info("Hupu HTML parsed successfully");
+            
+            // 打印页面标题，确认页面是否正确加载
+            log.info("Hupu page title: {}", document.title());
+            
+            // 尝试不同的选择器
+            org.jsoup.select.Elements hotItems = document.select(".hot-topic-list .topic-item");
+            if (hotItems.isEmpty()) {
+                hotItems = document.select(".hot-list .hot-item");
+            }
+            if (hotItems.isEmpty()) {
+                hotItems = document.select(".list-item");
+            }
+            
+            log.info("Found {} hot items", hotItems.size());
+
             int rank = 1;
-            for (JsonNode node : dataNode) {
+            for (org.jsoup.nodes.Element item : hotItems) {
+                // 标题和链接
+                org.jsoup.nodes.Element titleElement = item.selectFirst("a");
+                if (titleElement == null) continue;
+
+                String title = titleElement.text();
+                String url = titleElement.attr("href");
+                if (!url.startsWith("http")) {
+                    url = "https://bbs.hupu.com" + url;
+                }
+
+                // 热度值
+                org.jsoup.nodes.Element heatElement = item.selectFirst(".count, .hot-item-count, .topic-count");
+                long heatValue = 0;
+                if (heatElement != null) {
+                    String heatText = heatElement.text().replaceAll("[^0-9]", "");
+                    if (!heatText.isEmpty()) {
+                        heatValue = Long.parseLong(heatText);
+                    }
+                }
+
+                log.info("Hupu hot search: rank={}, title={}, url={}, heat={}", rank, title, url, heatValue);
+
                 HotSearchDTO dto = HotSearchDTO.builder()
-                        .title(node.path("title").asText())
-                        .url("https://bbs.hupu.com/" + node.path("tid").asText() + ".html")
-                        .heatValue(node.path("replies").asLong())
+                        .title(title)
+                        .url(url)
+                        .heatValue(heatValue)
                         .rankNum(rank++)
-                        .category(node.path("forum").path("name").asText())
+                        .category("虎扑热搜")
                         .build();
                 result.add(dto);
             }
+        } catch (Exception e) {
+            log.error("Failed to parse Hupu HTML: {}", e.getMessage());
+            e.printStackTrace();
         }
 
+        log.info("Parsed {} hot searches from Hupu", result.size());
         return result;
     }
 
