@@ -14,6 +14,10 @@ import reactor.core.publisher.Mono;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 百度热搜爬虫
+ * 抓取百度实时热点榜数据
+ */
 @Component
 @RequiredArgsConstructor
 public class BaiduScraper implements HotSearchScraper {
@@ -21,9 +25,11 @@ public class BaiduScraper implements HotSearchScraper {
     private static final Logger log = LoggerFactory.getLogger(BaiduScraper.class);
     private final WebClient webClient;
 
+    // 是否启用该爬虫
     @Value("${scraper.platforms.baidu.enabled:true}")
     private boolean enabled;
 
+    // 百度热搜页面地址（实际使用API接口）
     @Value("${scraper.platforms.baidu.url:https://top.baidu.com/board?tab=realtime}")
     private String url;
 

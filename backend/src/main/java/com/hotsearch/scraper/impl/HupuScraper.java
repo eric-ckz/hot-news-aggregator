@@ -14,6 +14,10 @@ import reactor.core.publisher.Mono;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 虎扑热搜爬虫
+ * 抓取虎扑热门话题数据
+ */
 @Component
 @RequiredArgsConstructor
 public class HupuScraper implements HotSearchScraper {
@@ -21,9 +25,11 @@ public class HupuScraper implements HotSearchScraper {
     private static final Logger log = LoggerFactory.getLogger(HupuScraper.class);
     private final WebClient webClient;
 
+    // 是否启用该爬虫
     @Value("${scraper.platforms.hupu.enabled:true}")
     private boolean enabled;
 
+    // 虎扑热门话题页面地址（HTML页面，需要解析）
     @Value("${scraper.platforms.hupu.url:https://bbs.hupu.com/all-gambia}")
     private String url;
 
@@ -51,17 +57,21 @@ public class HupuScraper implements HotSearchScraper {
                 .onErrorResume(error -> Mono.empty());
     }
 
+    /**
+     * 解析虎扑HTML页面响应
+     * 使用Jsoup解析HTML提取热门话题数据
+     */
     private List<HotSearchDTO> parseHtmlResponse(String html) {
         List<HotSearchDTO> result = new ArrayList<>();
 
         try {
             org.jsoup.nodes.Document document = org.jsoup.Jsoup.parse(html);
             log.info("Hupu HTML parsed successfully");
-            
+
             // 打印页面标题，确认页面是否正确加载
             log.info("Hupu page title: {}", document.title());
-            
-            // 尝试不同的选择器
+
+            // 尝试不同的选择器匹配热门话题元素
             org.jsoup.select.Elements hotItems = document.select(".hot-topic-list .topic-item");
             if (hotItems.isEmpty()) {
                 hotItems = document.select(".hot-list .hot-item");
@@ -69,7 +79,7 @@ public class HupuScraper implements HotSearchScraper {
             if (hotItems.isEmpty()) {
                 hotItems = document.select(".list-item");
             }
-            
+
             log.info("Found {} hot items", hotItems.size());
 
             int rank = 1;

@@ -14,6 +14,10 @@ import reactor.core.publisher.Mono;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * B站热搜爬虫
+ * 抓取哔哩哔哩热门视频数据
+ */
 @Component
 @RequiredArgsConstructor
 public class BilibiliScraper implements HotSearchScraper {
@@ -21,9 +25,11 @@ public class BilibiliScraper implements HotSearchScraper {
     private static final Logger log = LoggerFactory.getLogger(BilibiliScraper.class);
     private final WebClient webClient;
 
+    // 是否启用该爬虫
     @Value("${scraper.platforms.bilibili.enabled:true}")
     private boolean enabled;
 
+    // B站热门视频API地址，需在配置文件中指定
     @Value("${scraper.platforms.bilibili.url}")
     private String url;
 
@@ -38,7 +44,7 @@ public class BilibiliScraper implements HotSearchScraper {
             return Mono.empty();
         }
 
-        // 使用配置文件中的URL获取热门视频数据
+        // 调用B站API获取热门视频数据
         return webClient.get()
                 .uri(url)
                 .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")

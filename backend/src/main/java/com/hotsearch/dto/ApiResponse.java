@@ -2,12 +2,17 @@ package com.hotsearch.dto;
 
 import java.time.LocalDateTime;
 
+/**
+ * 统一API响应包装类
+ * 所有接口返回的数据都包装在此类中，提供统一的响应格式
+ * @param <T> 响应数据的类型
+ */
 public class ApiResponse<T> {
 
-    private Integer code;
-    private String message;
-    private T data;
-    private LocalDateTime timestamp;
+    private Integer code;               // 响应状态码，200表示成功
+    private String message;             // 响应消息
+    private T data;                     // 响应数据
+    private LocalDateTime timestamp;    // 响应时间戳
 
     public ApiResponse() {
     }

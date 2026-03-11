@@ -15,6 +15,10 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * 微博热搜爬虫
+ * 抓取微博实时热搜榜数据
+ */
 @Component
 @RequiredArgsConstructor
 public class WeiboScraper implements HotSearchScraper {
@@ -22,9 +26,11 @@ public class WeiboScraper implements HotSearchScraper {
     private static final Logger log = LoggerFactory.getLogger(WeiboScraper.class);
     private final WebClient webClient;
 
+    // 是否启用该爬虫，可通过配置文件控制
     @Value("${scraper.platforms.weibo.enabled:true}")
     private boolean enabled;
 
+    // 微博热搜API地址
     @Value("${scraper.platforms.weibo.url:https://weibo.com/ajax/side/hotSearch}")
     private String url;
 
@@ -50,10 +56,13 @@ public class WeiboScraper implements HotSearchScraper {
                 .onErrorResume(error -> Mono.empty());
     }
 
+    /**
+     * 解析微博API响应数据
+     * 微博官方API格式: {"data": {"realtime": [...]}}
+     */
     private List<HotSearchDTO> parseResponse(JsonNode jsonNode) {
         List<HotSearchDTO> result = new ArrayList<>();
 
-        // 微博官方API格式: {"data": {"realtime": [...]}}
         JsonNode realtimeNode = jsonNode.path("data").path("realtime");
         if (realtimeNode.isArray()) {
             for (JsonNode node : realtimeNode) {

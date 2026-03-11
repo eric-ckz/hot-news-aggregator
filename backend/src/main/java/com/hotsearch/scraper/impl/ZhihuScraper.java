@@ -14,6 +14,10 @@ import reactor.core.publisher.Mono;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 知乎热搜爬虫
+ * 抓取知乎热榜数据
+ */
 @Component
 @RequiredArgsConstructor
 public class ZhihuScraper implements HotSearchScraper {
@@ -21,9 +25,11 @@ public class ZhihuScraper implements HotSearchScraper {
     private static final Logger log = LoggerFactory.getLogger(ZhihuScraper.class);
     private final WebClient webClient;
 
+    // 是否启用该爬虫
     @Value("${scraper.platforms.zhihu.enabled:true}")
     private boolean enabled;
 
+    // 知乎热榜API地址
     @Value("${scraper.platforms.zhihu.url:https://api.zhihu.com/topstory/hot-list}")
     private String url;
 
@@ -59,8 +65,11 @@ public class ZhihuScraper implements HotSearchScraper {
                 .onErrorResume(error -> Mono.empty());
     }
 
+    /**
+     * 清理JSON字符串中的控制字符
+     * 避免解析失败
+     */
     private String cleanJsonString(String jsonString) {
-        // 清理JSON字符串中的控制字符
         return jsonString.replaceAll("[\\x00-\\x1F\\x7F]", "");
     }
 

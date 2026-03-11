@@ -2,19 +2,23 @@ package com.hotsearch.entity;
 
 import java.time.LocalDateTime;
 
+/**
+ * 热搜实体类
+ * 对应数据库表 hot_search，存储各平台热搜数据
+ */
 public class HotSearch {
 
-    private Long id;
-    private String platform;
-    private String title;
-    private String url;
-    private Long heatValue;
-    private String category;
-    private Integer rankNum;
-    private String iconUrl;
-    private String description;
-    private LocalDateTime createdTime;
-    private LocalDateTime updatedTime;
+    private Long id;                    // 主键ID
+    private String platform;            // 平台代码（如weibo、zhihu等）
+    private String title;               // 热搜标题
+    private String url;                 // 热搜链接
+    private Long heatValue;             // 热度值
+    private String category;            // 分类标签
+    private Integer rankNum;            // 排名
+    private String iconUrl;             // 图标URL
+    private String description;         // 描述信息
+    private LocalDateTime createdTime;  // 创建时间
+    private LocalDateTime updatedTime;  // 更新时间
 
     public HotSearch() {
     }

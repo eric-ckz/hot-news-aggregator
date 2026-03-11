@@ -10,6 +10,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+/**
+ * Redis配置类
+ * 配置RedisTemplate，用于缓存热搜数据，减少数据库访问压力
+ */
 @Configuration
 public class RedisConfig {
 
@@ -18,6 +22,7 @@ public class RedisConfig {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
 
+        // 配置Jackson ObjectMapper，支持多态类型序列化
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.activateDefaultTyping(
                 LaissezFaireSubTypeValidator.instance,
@@ -27,9 +32,13 @@ public class RedisConfig {
 
         GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(objectMapper);
 
+        // 设置键的序列化方式为字符串
         template.setKeySerializer(new StringRedisSerializer());
+        // 设置值的序列化方式为JSON
         template.setValueSerializer(jsonSerializer);
+        // 设置Hash键的序列化方式为字符串
         template.setHashKeySerializer(new StringRedisSerializer());
+        // 设置Hash值的序列化方式为JSON
         template.setHashValueSerializer(jsonSerializer);
 
         template.afterPropertiesSet();
