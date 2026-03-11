@@ -30,4 +30,9 @@ export const hotSearchApi = {
   refreshHotSearches(): Promise<ApiResponse<string>> {
     return api.get('/hot-search/refresh')
   },
+
+  // 刷新指定平台的热搜
+  refreshPlatformHotSearches(platform: string): Promise<ApiResponse<string>> {
+    return api.get(`/hot-search/refresh/${platform}`)
+  },
 }
