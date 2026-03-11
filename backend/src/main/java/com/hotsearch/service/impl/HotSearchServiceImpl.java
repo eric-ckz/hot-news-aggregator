@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -125,11 +126,30 @@ public class HotSearchServiceImpl implements HotSearchService {
             return;
         }
 
-        List<HotSearch> entities = hotSearches.stream()
-                .map(dto -> convertToEntity(dto, platform))
-                .collect(Collectors.toList());
-
-        hotSearchRepository.saveAll(entities);
+        int savedCount = 0;
+        for (HotSearchDTO dto : hotSearches) {
+            // 查找是否已存在相同平台和标题的记录
+            Optional<HotSearch> existing = hotSearchRepository.findByPlatformAndTitle(platform, dto.getTitle());
+            
+            HotSearch entity;
+            if (existing.isPresent()) {
+                // 更新现有记录
+                entity = existing.get();
+                entity.setUrl(dto.getUrl());
+                entity.setHeatValue(dto.getHeatValue());
+                entity.setCategory(dto.getCategory());
+                entity.setRankNum(dto.getRankNum());
+                entity.setIconUrl(dto.getIconUrl());
+                entity.setDescription(dto.getDescription());
+                entity.setUpdatedTime(LocalDateTime.now());
+            } else {
+                // 创建新记录
+                entity = convertToEntity(dto, platform);
+            }
+            
+            hotSearchRepository.save(entity);
+            savedCount++;
+        }
 
         try {
             redisTemplate.delete(REDIS_KEY_PREFIX + platform);
@@ -137,7 +157,7 @@ public class HotSearchServiceImpl implements HotSearchService {
             log.warn("Failed to clear platform cache: {}", e.getMessage());
         }
 
-        log.info("Saved {} hot searches for platform: {}", entities.size(), platform);
+        log.info("Saved/Updated {} hot searches for platform: {}", savedCount, platform);
     }
 
     private HotSearchDTO convertToDTO(HotSearch entity) {
