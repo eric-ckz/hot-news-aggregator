@@ -4,7 +4,8 @@ import com.hotsearch.dto.HotSearchDTO;
 import com.hotsearch.scraper.HotSearchScraper;
 import com.hotsearch.service.HotSearchService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,8 +18,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
 @RequiredArgsConstructor
-@Slf4j
 public class HotSearchScheduler {
+
+    private static final Logger log = LoggerFactory.getLogger(HotSearchScheduler.class);
 
     private final List<HotSearchScraper> scrapers;
     private final HotSearchService hotSearchService;

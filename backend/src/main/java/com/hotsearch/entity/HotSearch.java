@@ -1,67 +1,200 @@
 package com.hotsearch.entity;
 
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "hot_search", indexes = {
-    @Index(name = "idx_platform", columnList = "platform"),
-    @Index(name = "idx_category", columnList = "category"),
-    @Index(name = "idx_created_time", columnList = "createdTime")
-})
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class HotSearch {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "platform", nullable = false, length = 50)
     private String platform;
-
-    @Column(name = "title", nullable = false, length = 500)
     private String title;
-
-    @Column(name = "url", nullable = false, length = 1000)
     private String url;
-
-    @Column(name = "heat_value")
     private Long heatValue;
-
-    @Column(name = "category", length = 50)
     private String category;
-
-    @Column(name = "rank_num")
     private Integer rankNum;
-
-    @Column(name = "icon_url", length = 500)
     private String iconUrl;
-
-    @Column(name = "description", length = 2000)
     private String description;
-
-    @Column(name = "created_time", nullable = false)
     private LocalDateTime createdTime;
-
-    @Column(name = "updated_time")
     private LocalDateTime updatedTime;
 
-    @PrePersist
-    protected void onCreate() {
-        createdTime = LocalDateTime.now();
-        updatedTime = LocalDateTime.now();
+    public HotSearch() {
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        updatedTime = LocalDateTime.now();
+    public HotSearch(Long id, String platform, String title, String url, Long heatValue, String category, Integer rankNum, String iconUrl, String description, LocalDateTime createdTime, LocalDateTime updatedTime) {
+        this.id = id;
+        this.platform = platform;
+        this.title = title;
+        this.url = url;
+        this.heatValue = heatValue;
+        this.category = category;
+        this.rankNum = rankNum;
+        this.iconUrl = iconUrl;
+        this.description = description;
+        this.createdTime = createdTime;
+        this.updatedTime = updatedTime;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getPlatform() {
+        return platform;
+    }
+
+    public void setPlatform(String platform) {
+        this.platform = platform;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public Long getHeatValue() {
+        return heatValue;
+    }
+
+    public void setHeatValue(Long heatValue) {
+        this.heatValue = heatValue;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public Integer getRankNum() {
+        return rankNum;
+    }
+
+    public void setRankNum(Integer rankNum) {
+        this.rankNum = rankNum;
+    }
+
+    public String getIconUrl() {
+        return iconUrl;
+    }
+
+    public void setIconUrl(String iconUrl) {
+        this.iconUrl = iconUrl;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public LocalDateTime getCreatedTime() {
+        return createdTime;
+    }
+
+    public void setCreatedTime(LocalDateTime createdTime) {
+        this.createdTime = createdTime;
+    }
+
+    public LocalDateTime getUpdatedTime() {
+        return updatedTime;
+    }
+
+    public void setUpdatedTime(LocalDateTime updatedTime) {
+        this.updatedTime = updatedTime;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private Long id;
+        private String platform;
+        private String title;
+        private String url;
+        private Long heatValue;
+        private String category;
+        private Integer rankNum;
+        private String iconUrl;
+        private String description;
+        private LocalDateTime createdTime;
+        private LocalDateTime updatedTime;
+
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder platform(String platform) {
+            this.platform = platform;
+            return this;
+        }
+
+        public Builder title(String title) {
+            this.title = title;
+            return this;
+        }
+
+        public Builder url(String url) {
+            this.url = url;
+            return this;
+        }
+
+        public Builder heatValue(Long heatValue) {
+            this.heatValue = heatValue;
+            return this;
+        }
+
+        public Builder category(String category) {
+            this.category = category;
+            return this;
+        }
+
+        public Builder rankNum(Integer rankNum) {
+            this.rankNum = rankNum;
+            return this;
+        }
+
+        public Builder iconUrl(String iconUrl) {
+            this.iconUrl = iconUrl;
+            return this;
+        }
+
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        public Builder createdTime(LocalDateTime createdTime) {
+            this.createdTime = createdTime;
+            return this;
+        }
+
+        public Builder updatedTime(LocalDateTime updatedTime) {
+            this.updatedTime = updatedTime;
+            return this;
+        }
+
+        public HotSearch build() {
+            return new HotSearch(id, platform, title, url, heatValue, category, rankNum, iconUrl, description, createdTime, updatedTime);
+        }
     }
 }

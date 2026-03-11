@@ -2,12 +2,12 @@ package com.hotsearch.service.impl;
 
 import com.hotsearch.dto.HotSearchDTO;
 import com.hotsearch.entity.HotSearch;
-import com.hotsearch.repository.HotSearchRepository;
+import com.hotsearch.mapper.HotSearchMapper;
 import com.hotsearch.service.HotSearchService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,16 +16,15 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class HotSearchServiceImpl implements HotSearchService {
 
-    private final HotSearchRepository hotSearchRepository;
+    private static final Logger log = LoggerFactory.getLogger(HotSearchServiceImpl.class);
+    private final HotSearchMapper hotSearchMapper;
     private final RedisTemplate<String, Object> redisTemplate;
 
     private static final String REDIS_KEY_PREFIX = "hotsearch:";
@@ -45,7 +44,7 @@ public class HotSearchServiceImpl implements HotSearchService {
             log.warn("Redis access failed, falling back to database: {}", e.getMessage());
         }
 
-        List<String> platforms = hotSearchRepository.findAllPlatforms();
+        List<String> platforms = hotSearchMapper.findAllPlatforms();
         
         try {
             if (!platforms.isEmpty()) {
@@ -73,8 +72,8 @@ public class HotSearchServiceImpl implements HotSearchService {
         }
 
         LocalDateTime twoHoursAgo = LocalDateTime.now().minusHours(2);
-        List<HotSearch> entities = hotSearchRepository.findLatestByPlatform(
-                platform, twoHoursAgo, PageRequest.of(0, limit));
+        List<HotSearch> entities = hotSearchMapper.findLatestByPlatform(
+                platform, twoHoursAgo, limit);
 
         List<HotSearchDTO> dtos = entities.stream()
                 .map(this::convertToDTO)
@@ -129,25 +128,24 @@ public class HotSearchServiceImpl implements HotSearchService {
         int savedCount = 0;
         for (HotSearchDTO dto : hotSearches) {
             // 查找是否已存在相同平台和标题的记录
-            Optional<HotSearch> existing = hotSearchRepository.findByPlatformAndTitle(platform, dto.getTitle());
+            HotSearch existing = hotSearchMapper.findByPlatformAndTitle(platform, dto.getTitle());
             
             HotSearch entity;
-            if (existing.isPresent()) {
+            if (existing != null) {
                 // 更新现有记录
-                entity = existing.get();
-                entity.setUrl(dto.getUrl());
-                entity.setHeatValue(dto.getHeatValue());
-                entity.setCategory(dto.getCategory());
-                entity.setRankNum(dto.getRankNum());
-                entity.setIconUrl(dto.getIconUrl());
-                entity.setDescription(dto.getDescription());
-                entity.setUpdatedTime(LocalDateTime.now());
+                existing.setUrl(dto.getUrl());
+                existing.setHeatValue(dto.getHeatValue());
+                existing.setCategory(dto.getCategory());
+                existing.setRankNum(dto.getRankNum());
+                existing.setIconUrl(dto.getIconUrl());
+                existing.setDescription(dto.getDescription());
+                hotSearchMapper.updateById(existing);
             } else {
                 // 创建新记录
                 entity = convertToEntity(dto, platform);
+                hotSearchMapper.insert(entity);
             }
             
-            hotSearchRepository.save(entity);
             savedCount++;
         }
 
