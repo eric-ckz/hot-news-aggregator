@@ -58,14 +58,14 @@ scraper:
       # 知乎热搜API
       url: https://api.zhihu.com/topstory/hot-list
     hupu:
-      enabled: false
+      enabled: true
       url: https://bbs.hupu.com/all-gambia
     bilibili:
       enabled: true
       # 哔哩哔哩热门API
       url: https://api.bilibili.com/x/web-interface/popular
     baidu:
-      enabled: false
+      enabled: true
       # 百度需要爬取页面，暂时禁用
       url: https://top.baidu.com/board?tab=realtime
 
