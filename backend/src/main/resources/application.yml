@@ -59,12 +59,11 @@ scraper:
       url: https://api.zhihu.com/topstory/hot-list
     hupu:
       enabled: false
-      # 虎扑API需要特殊处理，暂时禁用
       url: https://bbs.hupu.com/all-gambia
     bilibili:
       enabled: true
-      # 免费API: https://v.api.aa1.cn/api/bilibili-rs/ (已验证可用)
-      url: https://v.api.aa1.cn/api/bilibili-rs/
+      # 哔哩哔哩热门API
+      url: https://api.bilibili.com/x/web-interface/popular
     baidu:
       enabled: false
       # 百度需要爬取页面，暂时禁用

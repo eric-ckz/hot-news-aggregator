@@ -23,7 +23,7 @@ public class BilibiliScraper implements HotSearchScraper {
     @Value("${scraper.platforms.bilibili.enabled:true}")
     private boolean enabled;
 
-    @Value("${scraper.platforms.bilibili.url:https://api.bilibili.com/x/web-interface/ranking/v2}")
+    @Value("${scraper.platforms.bilibili.url}")
     private String url;
 
     @Override
@@ -37,9 +37,13 @@ public class BilibiliScraper implements HotSearchScraper {
             return Mono.empty();
         }
 
+        // 使用配置文件中的URL获取热门视频数据
         return webClient.get()
-                .uri(url + "?rid=0&type=all")
-                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                .uri(url)
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                .header("Accept", "application/json, text/plain, */*")
+                .header("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
+                .header("Connection", "keep-alive")
                 .header("Referer", "https://www.bilibili.com")
                 .retrieve()
                 .bodyToMono(JsonNode.class)
@@ -53,20 +57,46 @@ public class BilibiliScraper implements HotSearchScraper {
 
         JsonNode listNode = jsonNode.path("data").path("list");
         if (listNode.isArray()) {
-            int rank = 1;
             for (JsonNode node : listNode) {
+                String title = node.path("title").asText();
+                String itemUrl = node.path("short_link_v2").asText();
+                if (itemUrl.isEmpty()) {
+                    String bvid = node.path("bvid").asText();
+                    itemUrl = "https://www.bilibili.com/video/" + bvid;
+                }
+                long heatValue = node.path("stat").path("view").asLong();
+                String iconUrl = node.path("pic").asText();
+                String description = node.path("owner").path("name").asText();
+                // 添加推荐原因
+                String reason = node.path("rcmd_reason").path("content").asText();
+                if (!reason.isEmpty()) {
+                    description += " - " + reason;
+                }
+
+                log.info("Bilibili hot search: title={}, url={}, heat={}", title, itemUrl, heatValue);
+
                 HotSearchDTO dto = HotSearchDTO.builder()
-                        .title(node.path("title").asText())
-                        .url("https://www.bilibili.com/video/" + node.path("bvid").asText())
-                        .heatValue(node.path("stat").path("view").asLong())
-                        .rankNum(rank++)
-                        .iconUrl(node.path("pic").asText())
-                        .description(node.path("owner").path("name").asText())
+                        .title(title)
+                        .url(itemUrl)
+                        .heatValue(heatValue)
+                        .rankNum(0) // 暂时设置为0，稍后按播放量排序后重新设置
+                        .iconUrl(iconUrl)
+                        .description(description)
+                        .category("哔哩哔哩热门")
                         .build();
                 result.add(dto);
             }
         }
 
+        // 按播放量降序排序
+        result.sort((a, b) -> Long.compare(b.getHeatValue(), a.getHeatValue()));
+        
+        // 重新设置排名
+        for (int i = 0; i < result.size(); i++) {
+            result.get(i).setRankNum(i + 1);
+        }
+
+        log.info("Parsed {} hot searches from Bilibili", result.size());
         return result;
     }
 
