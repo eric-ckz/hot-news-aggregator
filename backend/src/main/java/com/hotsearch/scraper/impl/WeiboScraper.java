@@ -62,8 +62,14 @@ public class WeiboScraper implements HotSearchScraper {
                 int rank = node.path("rank").asInt();
                 String labelName = node.path("label_name").asText();
 
-                // 构建完整的URL
-                String hotSearchUrl = "https://s.weibo.com/weibo?q=" + (wordScheme.isEmpty() ? title : wordScheme);
+                // 构建完整的URL，对参数值进行URL编码
+                String queryParam = wordScheme.isEmpty() ? title : wordScheme;
+                try {
+                    queryParam = java.net.URLEncoder.encode(queryParam, "UTF-8");
+                } catch (java.io.UnsupportedEncodingException e) {
+                    log.error("Failed to encode URL parameter: {}", e.getMessage());
+                }
+                String hotSearchUrl = "https://s.weibo.com/weibo?q=" + queryParam;
 
                 HotSearchDTO dto = HotSearchDTO.builder()
                         .title(title)
