@@ -65,6 +65,34 @@ scraper:
       enabled: true
       # 百度需要爬取页面
       url: https://top.baidu.com/board?tab=realtime
+    douban:
+      enabled: true
+      # 豆瓣热门话题
+      url: https://www.douban.com/group/explore
+    xiaohongshu:
+      enabled: true
+      # 小红书热门
+      url: https://www.xiaohongshu.com/explore
+    cnblogs:
+      enabled: true
+      # 博客园热门文章
+      url: https://www.cnblogs.com/aggsite/headline
+    juejin:
+      enabled: true
+      # 掘金热门文章
+      url: https://juejin.cn/hot/articles
+    oschina:
+      enabled: true
+      # 开源中国热门资讯
+      url: https://www.oschina.net/news/industry
+    douyin:
+      enabled: true
+      # 抖音热门视频
+      url: https://www.douyin.com/hot
+    dongchedi:
+      enabled: true
+      # 懂车帝热门内容
+      url: https://www.dongchedi.com/hot
 
 # 日志配置
 logging:
