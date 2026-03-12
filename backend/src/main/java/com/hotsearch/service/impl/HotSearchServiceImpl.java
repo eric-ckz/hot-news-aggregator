@@ -4,7 +4,6 @@ import com.hotsearch.dto.HotSearchDTO;
 import com.hotsearch.entity.HotSearch;
 import com.hotsearch.mapper.HotSearchMapper;
 import com.hotsearch.service.HotSearchService;
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -25,12 +24,17 @@ import java.util.stream.Collectors;
  * 使用Redis缓存减少数据库访问，提高查询性能
  */
 @Service
-@RequiredArgsConstructor
 public class HotSearchServiceImpl implements HotSearchService {
 
     private static final Logger log = LoggerFactory.getLogger(HotSearchServiceImpl.class);
     private final HotSearchMapper hotSearchMapper;
     private final RedisTemplate<String, Object> redisTemplate;
+
+    // 构造器
+    public HotSearchServiceImpl(HotSearchMapper hotSearchMapper, RedisTemplate<String, Object> redisTemplate) {
+        this.hotSearchMapper = hotSearchMapper;
+        this.redisTemplate = redisTemplate;
+    }
 
     // Redis缓存键前缀
     private static final String REDIS_KEY_PREFIX = "hotsearch:";

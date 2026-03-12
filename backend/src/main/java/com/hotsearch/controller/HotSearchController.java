@@ -3,7 +3,6 @@ package com.hotsearch.controller;
 import com.hotsearch.dto.ApiResponse;
 import com.hotsearch.dto.HotSearchDTO;
 import com.hotsearch.service.HotSearchService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,11 +14,15 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/hot-search")
-@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class HotSearchController {
 
     private final HotSearchService hotSearchService;
+
+    // 构造器
+    public HotSearchController(HotSearchService hotSearchService) {
+        this.hotSearchService = hotSearchService;
+    }
 
     /**
      * 获取所有支持的平台列表

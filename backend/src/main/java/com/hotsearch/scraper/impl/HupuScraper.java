@@ -1,9 +1,7 @@
 package com.hotsearch.scraper.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.hotsearch.dto.HotSearchDTO;
 import com.hotsearch.scraper.HotSearchScraper;
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,11 +17,15 @@ import java.util.List;
  * 抓取虎扑热门话题数据
  */
 @Component
-@RequiredArgsConstructor
 public class HupuScraper implements HotSearchScraper {
 
     private static final Logger log = LoggerFactory.getLogger(HupuScraper.class);
     private final WebClient webClient;
+
+    // 构造器
+    public HupuScraper(WebClient webClient) {
+        this.webClient = webClient;
+    }
 
     // 是否启用该爬虫
     @Value("${scraper.platforms.hupu.enabled:true}")

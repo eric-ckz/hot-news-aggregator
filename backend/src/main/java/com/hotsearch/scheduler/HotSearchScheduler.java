@@ -1,9 +1,7 @@
 package com.hotsearch.scheduler;
 
-import com.hotsearch.dto.HotSearchDTO;
 import com.hotsearch.scraper.HotSearchScraper;
 import com.hotsearch.service.HotSearchService;
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -21,7 +19,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * 负责定时触发各平台热搜数据的抓取任务
  */
 @Component
-@RequiredArgsConstructor
 public class HotSearchScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(HotSearchScheduler.class);
@@ -31,6 +28,12 @@ public class HotSearchScheduler {
     private final HotSearchService hotSearchService;
     // 标记应用是否已就绪，避免启动时立即执行
     private final AtomicBoolean applicationReady = new AtomicBoolean(false);
+
+    // 构造器
+    public HotSearchScheduler(List<HotSearchScraper> scrapers, HotSearchService hotSearchService) {
+        this.scrapers = scrapers;
+        this.hotSearchService = hotSearchService;
+    }
 
     /**
      * 应用启动完成后执行一次抓取

@@ -3,7 +3,6 @@ package com.hotsearch.scraper.impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotsearch.dto.HotSearchDTO;
 import com.hotsearch.scraper.HotSearchScraper;
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,11 +18,15 @@ import java.util.List;
  * 抓取哔哩哔哩热门视频数据
  */
 @Component
-@RequiredArgsConstructor
 public class BilibiliScraper implements HotSearchScraper {
 
     private static final Logger log = LoggerFactory.getLogger(BilibiliScraper.class);
     private final WebClient webClient;
+
+    // 构造器
+    public BilibiliScraper(WebClient webClient) {
+        this.webClient = webClient;
+    }
 
     // 是否启用该爬虫
     @Value("${scraper.platforms.bilibili.enabled:true}")
