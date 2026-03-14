@@ -9,6 +9,11 @@ CREATE DATABASE IF NOT EXISTS hot_search
 
 USE hot_search;
 
+-- Modify existing table if description column is VARCHAR (migration)
+-- 2026-03-14: Changed description from VARCHAR(2000) to TEXT to support longer content
+ALTER TABLE hot_search
+    MODIFY COLUMN description TEXT DEFAULT NULL COMMENT 'Description';
+
 -- Create hot_search table
 CREATE TABLE IF NOT EXISTS hot_search (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -19,7 +24,7 @@ CREATE TABLE IF NOT EXISTS hot_search (
     category VARCHAR(50) DEFAULT NULL COMMENT 'Category',
     rank_num INT DEFAULT NULL COMMENT 'Rank number',
     icon_url VARCHAR(500) DEFAULT NULL COMMENT 'Icon URL',
-    description VARCHAR(2000) DEFAULT NULL COMMENT 'Description',
+    description TEXT DEFAULT NULL COMMENT 'Description',
     created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_time DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
     

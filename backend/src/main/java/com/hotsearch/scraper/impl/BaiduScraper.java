@@ -2,9 +2,7 @@ package com.hotsearch.scraper.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotsearch.dto.HotSearchDTO;
-import com.hotsearch.scraper.HotSearchScraper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.hotsearch.scraper.AbstractHotSearchScraper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -18,23 +16,25 @@ import java.util.List;
  * 抓取百度实时热点榜数据
  */
 @Component
-public class BaiduScraper implements HotSearchScraper {
+public class BaiduScraper extends AbstractHotSearchScraper {
 
-    private static final Logger log = LoggerFactory.getLogger(BaiduScraper.class);
-    private final WebClient webClient;
+    // 百度热搜API地址（实际API接口，不是配置中的页面URL）
+    private static final String BAIDU_API_URL = "https://top.baidu.com/api/board?platform=wise&tab=realtime";
 
-    // 构造器
     public BaiduScraper(WebClient webClient) {
-        this.webClient = webClient;
+        super(webClient);
     }
 
-    // 是否启用该爬虫
     @Value("${scraper.platforms.baidu.enabled:true}")
-    private boolean enabled;
+    public void setEnabledValue(boolean enabled) {
+        this.enabled = enabled;
+    }
 
-    // 百度热搜页面地址（实际使用API接口）
     @Value("${scraper.platforms.baidu.url:https://top.baidu.com/board?tab=realtime}")
-    private String url;
+    public void setUrlValue(String url) {
+        // 这里只是记录配置的URL，实际使用 BAIDU_API_URL
+        this.url = url;
+    }
 
     @Override
     public String getPlatform() {
@@ -43,121 +43,100 @@ public class BaiduScraper implements HotSearchScraper {
 
     @Override
     public Mono<List<HotSearchDTO>> scrape() {
-        if (!enabled) {
-            return Mono.empty();
-        }
-
-        return webClient.get()
-                .uri("https://top.baidu.com/api/board?platform=wise&tab=realtime")
-                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                .header("Accept", "application/json, text/plain, */*")
-                .header("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
-                .header("Connection", "keep-alive")
-                .header("Referer", "https://top.baidu.com/board?tab=realtime")
-                .retrieve()
-                .bodyToMono(JsonNode.class)
-                .map(this::parseResponse)
-                .doOnError(error -> log.error("Failed to scrape Baidu hot search: {}", error.getMessage()))
-                .onErrorResume(error -> Mono.empty());
-    }
-
-    private List<HotSearchDTO> parseResponse(JsonNode jsonNode) {
-        List<HotSearchDTO> result = new ArrayList<>();
-
-        try {
-            List<JsonNode> candidates = new ArrayList<>();
-            findNodesWithWord(jsonNode, candidates);
-            
-            for (JsonNode node : candidates) {
-                String title = node.path("word").asText();
-                if (title.isEmpty()) {
-                    continue;
-                }
-
-                String itemUrl = node.path("url").asText();
-                if (itemUrl.isEmpty()) {
-                    try {
-                        itemUrl = "https://www.baidu.com/s?wd=" + java.net.URLEncoder.encode(title, "UTF-8") + "&sa=fyb_news&rsv_dl=fyb_news";
-                    } catch (java.io.UnsupportedEncodingException e) {
-                        itemUrl = "https://www.baidu.com/s?wd=" + title + "&sa=fyb_news&rsv_dl=fyb_news";
-                    }
-                } else {
-                    // 将m.baidu.com替换为www.baidu.com
-                    itemUrl = itemUrl.replace("m.baidu.com", "www.baidu.com");
-                    // 将word参数替换为wd参数
-                    itemUrl = itemUrl.replace("word=", "wd=");
-                    // 添加rsv_dl=fyb_news参数
-                    if (!itemUrl.contains("rsv_dl=fyb_news")) {
-                        if (itemUrl.contains("?")) {
-                            itemUrl += "&rsv_dl=fyb_news";
-                        } else {
-                            itemUrl += "?rsv_dl=fyb_news";
-                        }
-                    }
-                }
-
-                long heatValue = node.path("hotScore").asLong();
-                if (heatValue == 0) {
-                    heatValue = parseHeatValue(node.path("hotScore").asText());
-                }
-
-                int rank = node.path("index").asInt() + 1;
-                String iconUrl = node.path("img").asText();
-                String description = node.path("desc").asText();
-
-                HotSearchDTO dto = HotSearchDTO.builder()
-                        .title(title)
-                        .url(itemUrl)
-                        .heatValue(heatValue)
-                        .rankNum(rank)
-                        .iconUrl(iconUrl)
-                        .description(description)
-                        .category("百度热搜")
-                        .build();
-                result.add(dto);
-            }
-        } catch (Exception e) {
-            log.error("Error parsing Baidu response: {}", e.getMessage(), e);
-        }
-
-        log.info("Parsed {} hot searches from Baidu", result.size());
-        return result;
-    }
-    
-    private void findNodesWithWord(JsonNode node, List<JsonNode> result) {
-        if (node == null) {
-            return;
-        }
-        
-        if (node.has("word")) {
-            result.add(node);
-        }
-        
-        if (node.isArray()) {
-            for (JsonNode child : node) {
-                findNodesWithWord(child, result);
-            }
-        } else if (node.isObject()) {
-            for (JsonNode child : node) {
-                findNodesWithWord(child, result);
-            }
-        }
-    }
-
-    private Long parseHeatValue(String heatText) {
-        if (heatText == null || heatText.isEmpty()) {
-            return 0L;
-        }
-        try {
-            String numeric = heatText.replaceAll("[^0-9]", "");
-            return numeric.isEmpty() ? 0L : Long.parseLong(numeric);
-        } catch (NumberFormatException e) {
-            return 0L;
-        }
+        return doScrape(BAIDU_API_URL, this::parseResponse);
     }
 
     @Override
-    public boolean isEnabled() {
-        return enabled;
+    protected void addHeaders(org.springframework.http.HttpHeaders headers) {
+        super.addHeaders(headers);
+        headers.set("Referer", "https://top.baidu.com/board?tab=realtime");
+    }
+
+    private List<HotSearchDTO> parseResponse(String responseBody) {
+        List<HotSearchDTO> result = new ArrayList<>();
+        JsonNode jsonNode = parseJson(responseBody);
+
+        // 百度热搜数据在 data.cards[0].content[0].content 中
+        JsonNode cardsNode = jsonNode.path("data").path("cards");
+        if (!cardsNode.isArray() || cardsNode.isEmpty()) {
+            log.warn("Baidu response does not contain valid cards data");
+            return result;
+        }
+
+        JsonNode wrapperNode = cardsNode.get(0).path("content");
+        if (!wrapperNode.isArray() || wrapperNode.isEmpty()) {
+            log.warn("Baidu response does not contain valid wrapper content data");
+            return result;
+        }
+
+        JsonNode contentNode = wrapperNode.get(0).path("content");
+        if (!contentNode.isArray()) {
+            log.warn("Baidu response does not contain valid content data");
+            return result;
+        }
+
+        for (JsonNode node : contentNode) {
+            String title = node.path("word").asText();
+            if (title.isEmpty()) {
+                continue;
+            }
+
+            String itemUrl = normalizeBaiduUrl(node.path("url").asText(), title);
+            long heatValue = parseBaiduHeatValue(node);
+            int rank = node.path("index").asInt() + 1;
+            String iconUrl = node.path("img").asText();
+            String description = truncate(node.path("desc").asText(), 1000);
+
+            if (!isValidHotSearch(title, itemUrl)) {
+                log.debug("Skipping invalid Baidu hot search: title={}", title);
+                continue;
+            }
+
+            HotSearchDTO dto = HotSearchDTO.builder()
+                    .title(title)
+                    .url(itemUrl)
+                    .heatValue(heatValue)
+                    .rankNum(rank)
+                    .iconUrl(iconUrl)
+                    .description(description)
+                    .category("百度热搜")
+                    .build();
+            result.add(dto);
+        }
+
+        return result;
+    }
+
+    /**
+     * 获取百度的热度值
+     */
+    private long parseBaiduHeatValue(JsonNode node) {
+        long heatValue = node.path("hotScore").asLong();
+        if (heatValue == 0) {
+            heatValue = parseHeatValue(node.path("hotScore").asText());
+        }
+        return heatValue;
+    }
+
+    /**
+     * 规范化百度URL
+     */
+    private String normalizeBaiduUrl(String url, String title) {
+        if (url == null || url.isEmpty()) {
+            return "https://www.baidu.com/s?wd=" + encodeUrlParam(title) + "&sa=fyb_news&rsv_dl=fyb_news";
+        }
+
+        // 将 m.baidu.com 替换为 www.baidu.com
+        url = url.replace("m.baidu.com", "www.baidu.com");
+
+        // 将 word 参数替换为 wd 参数
+        url = url.replace("word=", "wd=");
+
+        // 添加 rsv_dl=fyb_news 参数
+        if (!url.contains("rsv_dl=fyb_news")) {
+            url = url.contains("?") ? url + "&rsv_dl=fyb_news" : url + "?rsv_dl=fyb_news";
+        }
+
+        return url;
     }
 }
