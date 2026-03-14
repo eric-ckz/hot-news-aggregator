@@ -1,5 +1,10 @@
 <template>
   <div class="home-view">
+    <!-- 错误提示 -->
+    <div v-if="store.error" class="error-alert">
+      <el-alert :title="store.error" type="error" show-icon closable @close="store.error = null" />
+    </div>
+
     <div v-if="loading" class="loading-container">
       <div class="loading-grid">
         <div v-for="i in 6" :key="i" class="loading-card">
@@ -37,6 +42,11 @@
           @refresh="handlePlatformRefresh"
         />
       </VueDraggable>
+
+      <!-- 空状态提示 -->
+      <div v-if="orderedPlatforms.length === 0" class="empty-state">
+        <el-empty description="暂无平台数据，请检查后端服务是否正常" />
+      </div>
     </template>
   </div>
 </template>
@@ -145,5 +155,16 @@ onMounted(async () => {
       padding: 10px 16px;
     }
   }
+}
+
+.error-alert {
+  margin-bottom: 20px;
+}
+
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
 }
 </style>

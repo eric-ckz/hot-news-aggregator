@@ -43,31 +43,20 @@ public class HotSearchServiceImpl implements HotSearchService {
 
     @Override
     public List<String> getAllPlatforms() {
-        String cacheKey = REDIS_KEY_PREFIX + "platforms";
-        
-        // 先尝试从Redis缓存获取
-        try {
-            @SuppressWarnings("unchecked")
-            List<String> platforms = (List<String>) redisTemplate.opsForValue().get(cacheKey);
-            if (platforms != null && !platforms.isEmpty()) {
-                return platforms;
-            }
-        } catch (DataAccessException e) {
-            // Redis访问失败，降级到数据库查询
-            log.warn("Redis access failed, falling back to database: {}", e.getMessage());
-        }
+        // 暂时禁用缓存，每次都从数据库查询
+        // String cacheKey = REDIS_KEY_PREFIX + "platforms";
 
         // 从数据库查询平台列表
         List<String> platforms = hotSearchMapper.findAllPlatforms();
-        
+
         // 将查询结果写入Redis缓存
-        try {
+        /* try {
             if (!platforms.isEmpty()) {
                 redisTemplate.opsForValue().set(cacheKey, platforms, REDIS_EXPIRE_HOURS, TimeUnit.HOURS);
             }
         } catch (DataAccessException e) {
             log.warn("Failed to cache platforms to Redis: {}", e.getMessage());
-        }
+        } */
 
         return platforms;
     }
@@ -146,10 +135,11 @@ public class HotSearchServiceImpl implements HotSearchService {
         }
 
         int savedCount = 0;
+        boolean isNewPlatform = false;
         for (HotSearchDTO dto : hotSearches) {
             // 查找是否已存在相同平台和标题的记录（去重逻辑）
             HotSearch existing = hotSearchMapper.findByPlatformAndTitle(platform, dto.getTitle());
-            
+
             HotSearch entity;
             if (existing != null) {
                 // 更新现有记录（热度、排名等可能变化）
@@ -164,14 +154,20 @@ public class HotSearchServiceImpl implements HotSearchService {
                 // 创建新记录
                 entity = convertToEntity(dto, platform);
                 hotSearchMapper.insert(entity);
+                isNewPlatform = true;
             }
-            
+
             savedCount++;
         }
 
         // 清除该平台在Redis中的缓存，下次查询时从数据库重新加载
         try {
             redisTemplate.delete(REDIS_KEY_PREFIX + platform);
+            // 如果有新平台数据，也清除平台列表缓存
+            if (isNewPlatform) {
+                redisTemplate.delete(REDIS_KEY_PREFIX + "platforms");
+                log.info("Cleared platforms cache due to new platform data: {}", platform);
+            }
         } catch (DataAccessException e) {
             log.warn("Failed to clear platform cache: {}", e.getMessage());
         }
