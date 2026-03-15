@@ -3,6 +3,7 @@ package com.hotsearch.config;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -24,6 +25,8 @@ public class RedisConfig {
 
         // 配置Jackson ObjectMapper，支持多态类型序列化
         ObjectMapper objectMapper = new ObjectMapper();
+        // 注册JavaTimeModule以支持JDK 8日期时间类型的序列化
+        objectMapper.registerModule(new JavaTimeModule());
         objectMapper.activateDefaultTyping(
                 LaissezFaireSubTypeValidator.instance,
                 ObjectMapper.DefaultTyping.NON_FINAL,
