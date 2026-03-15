@@ -6,7 +6,7 @@ spring:
     name: hot-search-aggregator
 
   datasource:
-    url: jdbc:mysql://localhost:3306/hot_search?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://localhost:3306/hot_search?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: root
     password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -71,20 +71,21 @@ scraper:
       url: https://www.douban.com/group/explore
     xiaohongshu:
       enabled: true
-      # 小红书热门
-      url: https://www.xiaohongshu.com/explore
+      # 小红书热搜API (已验证可用)
+      url: https://api-hot.imsyy.top/xiaohongshu
     cnblogs:
       enabled: true
       # 博客园热门文章
       url: https://www.cnblogs.com/aggsite/headline
     juejin:
       enabled: true
-      # 掘金热门文章
-      url: https://juejin.cn/hot/articles
+      # 掘金热门文章API (category_id: 1=后端, 2=前端, 3=Android, 4=iOS)
+      url: https://api.juejin.cn/content_api/v1/content/article_rank?category_id=1&type=hot
     oschina:
       enabled: true
-      # 开源中国热门资讯
-      url: https://www.oschina.net/news/industry
+      # 开源中国热门资讯 - 使用官方API
+      # https://www.oschina.net/ApiHomeNew/homeListByNewType?page=1&pageSize=11&type=9998
+      url: https://www.oschina.net/ApiHomeNew/homeListByNewType?type=9998&pageSize=30
     douyin:
       enabled: true
       # 抖音热门视频
